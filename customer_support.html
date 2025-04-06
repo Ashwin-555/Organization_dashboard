@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Support - Employees</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #2980b9;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .card h2 {
+            color: #2980b9;
+            text-align: center;
+        }
+        .remove-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .remove-btn:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Customer Support</h1>
+    </header>
+    <section class="dashboard">
+        <div class="card">
+            <h2>Employee Details</h2>
+            <button class="add-btn" onclick="openEmployeeForm()">+</button>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Employee ID</th><th>Employee Name</th><th>Role</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="employeeTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Performance</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Employee ID</th><th>Employee Name</th><th>Rating</th><th>Feedback</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="performanceTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Attendance</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Employee ID</th><th>Employee Name</th><th>Working Hours</th><th>Attendance Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <script>
+        function openEmployeeForm() {
+            let department = "{{ department_name }}";
+            window.location.href = `/department/${department}/add_employee`;
+        }
+
+        function loadEmployees() {
+            let department = window.location.pathname.split("/")[2];
+            fetch(`/api/employees/${department}`)
+            .then(response => response.json())
+            .then(data => {
+                let employeeTable = document.getElementById("employeeTableBody");
+                let performanceTable = document.getElementById("performanceTableBody");
+                let attendanceTable = document.getElementById("attendanceTableBody");
+                
+                employeeTable.innerHTML = "";
+                performanceTable.innerHTML = "";
+                attendanceTable.innerHTML = "";
+                
+                data.employees.forEach(emp => {
+                    employeeTable.innerHTML += `
+                        <tr>
+                            <td>${emp.employee_id}</td>
+                            <td>${emp.name}</td>
+                            <td>${emp.role}</td>
+                            <td>
+                                <button class="remove-btn" onclick="removeEmployee(${emp.employee_id}, '${department}')">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                    
+                    performanceTable.innerHTML += `
+                        <tr>
+                            <td>${emp.employee_id}</td>
+                            <td>${emp.name}</td>
+                            <td>${emp.performance_rating}</td>
+                            <td>${emp.feedback}</td>
+                            <td>
+                                <button class="remove-btn" onclick="removeEmployee(${emp.employee_id}, '${department}')">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                    
+                    attendanceTable.innerHTML += `
+                        <tr>
+                            <td>${emp.employee_id}</td>
+                            <td>${emp.name}</td>
+                            <td>${emp.working_hours}</td>
+                            <td>${emp.attendance_status}</td>
+                            <td>
+                                <button class="remove-btn" onclick="removeEmployee(${emp.employee_id}, '${department}')">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(error => console.error("Error loading employees:", error));
+        }
+
+        function removeEmployee(employeeId, department) {
+            if (!confirm(`Are you sure you want to remove Employee ID ${employeeId}?`)) {
+                return;
+            }
+            fetch(`/api/${department}/remove_employee/${employeeId}`, { method: "DELETE" })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+                loadEmployees();
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        document.addEventListener("DOMContentLoaded", loadEmployees);
+    </script>
+</body>
+</html>
